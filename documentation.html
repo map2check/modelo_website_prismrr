@@ -1,0 +1,226 @@
+---
+title: Arcana
+layout: default
+---
+{% assign current = page.url | downcase | split: '/' %}
+<!-- Main -->
+<section class="wrapper style1">
+	<div class="container">
+		<div id="content">
+
+				<!-- Content -->
+			
+					<article>
+						<header>
+							<h2>Overview of Map2Check</h2>
+							<p>Map2Check Options</p>
+						</header>                       
+                       
+                    <div style="width: 100%; margin-top: 100px;">
+                        <p>Contents</p>
+                        <ul>
+                            <li>
+                                <a href="#map_usage">Map2Check Usage</a>
+                            </li>
+                            <li>
+                                <a href="#map_sample">Map2Check First Example</a>
+                            </li>
+                            <li>
+                                <a href="#map_options">Map2Check Options</a>
+                            </li>
+                        </ul>
+                        
+                        <!-- Each content -->
+                        <h2 id="map_usage">Map2Check Usage</h2>
+                            <p style="text-align:justify">
+                            Map2Check is invoked through a command-line interface as follows: 
+                            </p>
+<figure id="code">
+<pre class="prettyprint lang-sh code">
+$./map2check [options] program.[i|c|bc]
+</pre>
+</figure>
+                            </br>
+                            <p style="text-align:justify">
+                            To get a complete list of Map2Check’s command-line options run: 
+                            <font face="courier new"><a href="#map_options">map2check --help</a></font>. The remainder of this page illustrate Map2Check’s main command-line options.
+                            </p>
+                            
+                        <h2 id="map_sample">Map2Check First Example</h2>
+                            <p style="text-align:justify">
+                            In this first example, we show how to apply Map2Check tool to identify a simple invalid free in the following C source code, called invalid_free.c
+                            </p>
+<figure id="code">
+<pre class="prettyprint lang-c linenums code">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main()
+{
+    int *a = malloc(12);
+    int *b = malloc(12);
+    int  c =  12;
+    *a = c;
+    b = a;
+    
+    free(a);
+    free(b);//invalid free
+}
+</pre>
+</figure>
+                            </br>
+                            <p style="text-align:justify">
+                            Map2Check should be called in the installation directory as follows: 
+                            <font face="courier new">./map2check invalid_free.c</font>, this way the 
+                            following result will be presented. 
+                            </p>
+                            
+<figure id="code">
+<pre class="prettyprint lang-sh code">
+Started Map2Check
+Compiling /home/map2check/devel_tool/mygitclone/invalid_free.c
+Adding nondet pass
+Adding memtrack pass
+Adding map2check pass
+Linking with map2check library
+Instrumenting with LLVM LibFuzzer
+Executing LibFuzzer with map2check
+Running 2 workers
+./5ee846f7dde256e515c97404b52edaee8239b686.map2check-fuzzed.out -use_value_profile=1 >fuzz-0.log 2>&1
+./5ee846f7dde256e515c97404b52edaee8239b686.map2check-fuzzed.out -use_value_profile=1 >fuzz-1.log 2>&1
+================== Job 0 exited with exit code 19712 ============
+INFO: Seed: 1536959748
+INFO: Loaded 1 modules   (292 inline 8-bit counters): 292 [0x66f1a8, 0x66f2cc), 
+INFO: Loaded 1 PC tables (292 PCs): 292 [0x45e1d0,0x45f410), 
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+...
+Started counter example generation
+Counter-example:
+
+State 0: file /home/map2check/devel_tool/mygitclone/invalid_free.c
+------------------------------------------------------------
+>>Memory list log
+
+  Line content   :     int *a = malloc(12);
+  Address        : 0x7f826bbf3e98
+  PointsTo       : 0x7f82640009b0
+  Is Free        : FALSE
+  Is Dynamic     : TRUE
+  Var Name       : 
+  Line Number    : 6
+  Function Scope : main
+
+State 1: file /home/map2check/devel_tool/mygitclone/invalid_free.c
+------------------------------------------------------------
+>>Memory list log
+
+  Line content   :     int *b = malloc(12);
+  Address        : 0x7f826bbf3e90
+  PointsTo       : 0x7f8264000c40
+  Is Free        : FALSE
+  Is Dynamic     : TRUE
+  Var Name       : 
+  Line Number    : 7
+  Function Scope : main
+
+State 2: file /home/map2check/devel_tool/mygitclone/invalid_free.c
+------------------------------------------------------------
+>>Memory list log
+
+  Line content   :     b = a;
+  Address        : 0x7f826bbf3e90
+  PointsTo       : 0x7f82640009b0
+  Is Free        : FALSE
+  Is Dynamic     : TRUE
+  Var Name       : 
+  Line Number    : 10
+  Function Scope : main
+
+State 3: file /home/map2check/devel_tool/mygitclone/invalid_free.c
+------------------------------------------------------------
+>>Memory list log
+
+  Line content   :     free(a);
+  Address        : 0x7f826bbf3e98
+  PointsTo       : 0x7f82640009b0
+  Is Free        : TRUE
+  Is Dynamic     : FALSE
+  Var Name       : 
+  Line Number    : 12
+  Function Scope : main
+
+State 4: file /home/map2check/devel_tool/mygitclone/invalid_free.c
+------------------------------------------------------------
+>>Memory list log
+
+  Line content   :     free(a);
+  Address        : 0x7f826bbf3e90
+  PointsTo       : 0x7f82640009b0
+  Is Free        : TRUE
+  Is Dynamic     : FALSE
+  Var Name       : 
+  Line Number    : 12
+  Function Scope : main
+
+State 5: file /home/map2check/devel_tool/mygitclone/invalid_free.c
+------------------------------------------------------------
+>>Memory list log
+
+  Line content   :     free(b);//invalid free
+  Address        : 0x7f826bbf3e90
+  PointsTo       : 0x7f82640009b0
+  Is Free        : TRUE
+  Is Dynamic     : FALSE
+  Var Name       : 
+  Line Number    : 13
+  Function Scope : main
+
+----------------------------------------------------
+Violated property:
+	file map2check_property line 13 function main
+	FALSE-FREE: Operand of free must have zero pointer offset
+
+VERIFICATION FAILED
+</pre>
+</figure>
+</br>
+                            
+                            <h2 id="map_options">Map2Check Options</h2>
+                            <p style="text-align:justify">
+                            Map2Check is invoked as follows: <font face="courier new"><a href="#map_options">map2check --help</a></font>.
+                            </p>
+                            
+<figure id="code">
+<pre class="prettyprint lang-sh code">
+&gt; &gt; &gt; 	  v7.2-Flock : Tue Nov 27 22:00:00 -04 2018 	 &lt; &lt; &lt;
+
+Usage: map2check [options] file.[i|c|bc]
+
+Options:
+  -h [ --help ]                show help
+  -v [ --version ]             prints map2check version
+  -d [ --debug ]                Debug mode
+  -i [ --input-file ] arg      specifies the files
+  -t [ --timeout ] arg         Timeout for map2check execution
+  -f [ --target-function ]     Searches for __VERIFIER_error is reachable
+  -g [ --generate-testcase ]   Creates c program with fail testcase 
+                               (experimental)
+  -m [ --memtrack ]            Check for memory errors
+  -p [ --print-counter ]       Print Counterexample
+  --memcleanup-property         Analyze program for memcleanup errors
+  -o [ --check-overflow ]      Analyze program for overflow failures
+  -c [ --check-asserts ]       Analyze program and verify assert failures
+  -a [ --add-invariants ]      Adding program invariants adopting Crab-LLVM
+  -w [ --generate-witness ]    Generates witness file
+  -e [ --expected-result ] arg Specifies type of violation expected
+  -b [ --btree ]                Uses btree structure to hold information 
+                               (experimental, use this if you are having memory
+                               problems)
+</pre>
+</figure>
+</br>
+                    </div>
+		
+			</div>
+		</div>
+	</section>			
